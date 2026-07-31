@@ -26,19 +26,18 @@ Usage:
 Output: A formatted Excel file with all results.
 """
 
-import re
-import time
-import random
-import logging
 import argparse
 import datetime
-from dataclasses import dataclass, asdict
-from pathlib import Path
+import logging
+import random
+import re
+import time
+from dataclasses import dataclass
 
-from curl_cffi import requests as cffi_requests
-from bs4 import BeautifulSoup
 import pandas as pd
-from openpyxl.styles import Font, PatternFill, Alignment
+from bs4 import BeautifulSoup
+from curl_cffi import requests as cffi_requests
+from openpyxl.styles import Alignment, Font, PatternFill
 
 # ---------------------------------------------------------------------------
 # Logging
