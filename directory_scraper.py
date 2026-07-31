@@ -1,19 +1,27 @@
 """
 Business Directory Scraper
 ==========================
-Scrapes business contact information from Yellow Pages (yellowpages.com)
-given a city and category. Extracts business name, phone, address, website,
-rating, and category. Handles pagination automatically and uses rate limiting
-with random delays to be respectful of the server.
+A structured data-extraction pipeline that turns paginated directory listings
+into a formatted Excel workbook. Extracts business name, phone, address,
+website, rating and category, walks pagination automatically, and throttles
+requests with randomised delays.
 
-Uses curl_cffi to impersonate Chrome's TLS fingerprint, which is required to
-pass the Cloudflare protection Yellow Pages uses. Standard requests/urllib get
-a 403; curl_cffi passes transparently.
+The parsing and export layers are source-agnostic: parse_listing,
+parse_results_page and export_to_excel operate on HTML and dataclasses rather
+than on any particular site, and are unit-tested against saved fixtures.
+
+Responsible use
+---------------
+The live-fetch path targets Yellow Pages. Check a site's Terms of Service and
+robots.txt before pointing this at it, and prefer an official API or a
+licensed data provider where one exists. --demo runs the entire pipeline
+against generated data with no network access, and is the intended path for
+evaluating this project.
 
 Usage:
+    python directory_scraper.py --demo    # full pipeline, no network requests
     python directory_scraper.py --category "plumbers" --city "Austin, TX"
     python directory_scraper.py --category "dentists" --city "Chicago, IL" --max-pages 5
-    python directory_scraper.py --demo    # Generate sample data without live requests
 
 Output: A formatted Excel file with all results.
 """
@@ -38,7 +46,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("directory_scraper.log")],
+    handlers=[logging.StreamHandler(), logging.FileHandler("directory_scraper.log", encoding="utf-8")],
 )
 logger = logging.getLogger(__name__)
 
@@ -63,14 +71,19 @@ class Business:
 
 
 # ---------------------------------------------------------------------------
-# HTTP fetch using curl_cffi (impersonates Chrome TLS fingerprint)
+# HTTP fetch
 # ---------------------------------------------------------------------------
 def fetch_page(url: str, session: cffi_requests.Session, retries: int = 3) -> BeautifulSoup | None:
     """
     Fetch a URL and return a BeautifulSoup object, or None on failure.
 
-    Uses curl_cffi with Chrome124 TLS impersonation to bypass Cloudflare's
-    fingerprint-based bot detection, which blocks standard Python HTTP clients.
+    Retries up to `retries` times with linearly increasing backoff, and treats
+    a suspiciously small response body as a failure rather than parsing it --
+    an error or interstitial page is usually far shorter than a real results
+    page, so length is a cheap sanity check before handing bytes to the parser.
+
+    Returns None rather than raising: the caller decides whether a failed page
+    ends the run, so one bad page cannot abort a long pagination walk.
     """
     for attempt in range(1, retries + 1):
         try:
@@ -211,7 +224,7 @@ class DirectoryScraper:
 
             soup = fetch_page(url, self.session)
             if soup is None:
-                logger.warning(f"Could not load page {page_num} — stopping")
+                logger.warning(f"Could not load page {page_num} - stopping")
                 break
 
             page_results, next_url = parse_results_page(soup)
@@ -361,7 +374,7 @@ def main():
 
     if results:
         export_to_excel(results, output)
-        print(f"\n✓ {len(results)} businesses saved to: {output}")
+        print(f"\n[OK] {len(results)} businesses saved to: {output}")
     else:
         print("No results found. Check the log for details.")
 
