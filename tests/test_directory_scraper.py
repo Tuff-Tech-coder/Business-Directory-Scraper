@@ -4,6 +4,7 @@ Every test runs against saved HTML fixtures -- no network access, so the suite
 is deterministic and runs in CI. The live-fetch path is deliberately not
 exercised here; parsing and export are the parts that carry the logic.
 """
+
 import sys
 from pathlib import Path
 
@@ -119,9 +120,7 @@ class TestParseResultsPage:
         assert next_url == "https://www.yellowpages.com/search?page=2"
 
     def test_absolute_next_url_is_left_alone(self):
-        _, next_url = parse_results_page(
-            soup(page(FULL_CARD, "https://example.com/search?page=3"))
-        )
+        _, next_url = parse_results_page(soup(page(FULL_CARD, "https://example.com/search?page=3")))
         assert next_url == "https://example.com/search?page=3"
 
     def test_last_page_reports_no_next_url(self):
@@ -145,12 +144,22 @@ class TestExportToExcel:
     @pytest.fixture
     def businesses(self):
         return [
-            Business(name="Ace Plumbing", phone="(512) 555-0142",
-                     address="1 Main St", city_state="Austin, TX 78701",
-                     website="https://ace.com", category="Plumbers",
-                     rating="4/5", review_count="87"),
-            Business(name="Bee Plumbing", phone="(512) 555-0199",
-                     address="2 Oak Ave", city_state="Austin, TX 78702"),
+            Business(
+                name="Ace Plumbing",
+                phone="(512) 555-0142",
+                address="1 Main St",
+                city_state="Austin, TX 78701",
+                website="https://ace.com",
+                category="Plumbers",
+                rating="4/5",
+                review_count="87",
+            ),
+            Business(
+                name="Bee Plumbing",
+                phone="(512) 555-0199",
+                address="2 Oak Ave",
+                city_state="Austin, TX 78702",
+            ),
         ]
 
     def test_writes_a_readable_workbook(self, businesses, tmp_path):
@@ -161,7 +170,7 @@ class TestExportToExcel:
         assert out.exists()
 
         ws = openpyxl.load_workbook(out)["Results"]
-        assert ws.max_row == 3          # header + 2 rows
+        assert ws.max_row == 3  # header + 2 rows
         assert ws.cell(row=2, column=1).value == "Ace Plumbing"
         assert ws.cell(row=3, column=1).value == "Bee Plumbing"
 
@@ -173,8 +182,15 @@ class TestExportToExcel:
         ws = openpyxl.load_workbook(out)["Results"]
         headers = [c.value for c in ws[1]]
         assert headers == [
-            "Business Name", "Phone", "Address", "City / State / ZIP",
-            "Website", "Category", "Rating", "Review Count", "Date Scraped",
+            "Business Name",
+            "Phone",
+            "Address",
+            "City / State / ZIP",
+            "Website",
+            "Category",
+            "Rating",
+            "Review Count",
+            "Date Scraped",
         ]
 
     def test_empty_input_writes_no_file(self, tmp_path):
