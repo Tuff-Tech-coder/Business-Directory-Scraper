@@ -104,9 +104,8 @@ The reviewed build passed **60 tests** on Windows with Python 3.12. Tests cover 
 
 The browser walkthrough additionally checked search, empty states, pagination, combined filters, category/location changes, desktop/mobile layouts, and workbook generation. See [REVIEW.md](REVIEW.md) for the reproduced defects and evidence.
 
-## Portfolio materials
+## More detail
 
-- [Portfolio summary, LinkedIn draft, and screenshot captions](PORTFOLIO.md)
 - [Filtered results](docs/screenshots/02-filtered-results.jpg)
 - [Excel export preview](docs/screenshots/04-excel-export.jpg)
 - [Generated sample workbook](plumbers_austin_sample.xlsx)
